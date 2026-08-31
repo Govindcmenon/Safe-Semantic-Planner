@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Safe Semantic Planner | Interactive LPA* Visualizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="logo-group">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+          <polyline points="2 17 12 22 22 17"></polyline>
+          <polyline points="2 12 12 17 22 12"></polyline>
+        </svg>
+      </div>
+      <div class="logo-title">
+        <h1>Safe Semantic Planner</h1>
+        <div class="logo-subtitle">Finite Cartesian State Space • LPA* Engine</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <div class="badge-tag highlight">
+        <span class="dot-indicator"></span>
+        <span>LPA* Active</span>
+      </div>
+      <div class="badge-tag">PCCST503</div>
+    </div>
+  </header>
+
+  <!-- Main Grid Layout -->
+  <main class="app-container">
+
+    <!-- Left Panel: Scenarios & Controls -->
+    <aside class="glass-card">
+      <div class="panel-header">
+        <span class="panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          Test Scenarios
+        </span>
+      </div>
+
+      <div class="panel-content">
+        <div class="scenario-selector" id="scenarioList">
+          <!-- Dynamically filled by app.js -->
+        </div>
+
+        <div class="control-group">
+          <div class="toggle-row">
+            <span class="control-label" style="margin-bottom:0;">Safety Objective Mode</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="switchSafetyMode" checked>
+              <span class="slider-round"></span>
+            </label>
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">
+            Optimizes safety clearance ($k_{geom}$) & transition safety ($k_{trans}$) alongside cost.
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-label">
+            <span>Clearance Weight (kGeom)</span>
+            <span class="control-val" id="kGeomVal">2.0</span>
+          </div>
+          <input type="range" min="0" max="10" step="0.5" value="2" class="range-slider" id="sliderKGeom">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label">
+            <span>Safety Weight (kTrans)</span>
+            <span class="control-val" id="kTransVal">2.0</span>
+          </div>
+          <input type="range" min="0" max="10" step="0.5" value="2" class="range-slider" id="sliderKTrans">
+        </div>
+
+        <button class="btn-secondary" id="btnToggleTransition">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+          Toggle Transition Availability
+        </button>
+      </div>
+    </aside>
+
+    <!-- Center Viewport: Interactive 2D Canvas -->
+    <section class="glass-card viewport-card">
+      <div class="canvas-container">
+        <canvas id="plannerCanvas"></canvas>
+
+        <!-- Floating HUD -->
+        <div class="canvas-hud">
+          <div class="hud-panel">
+            <span class="hud-pill" style="color: var(--accent-cyan);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+              <span>Interactive 2D Cartesian Space</span>
+            </span>
+            <span style="color: var(--text-muted); font-size: 0.75rem;">• Drag nodes to replan in real-time</span>
+          </div>
+          <div class="hud-panel">
+            <span id="resultStatus" class="status-badge consistent">SUCCESS</span>
+          </div>
+        </div>
+
+        <!-- Canvas Controls -->
+        <div class="canvas-controls">
+          <button class="canvas-btn" id="btnZoomIn" title="Zoom In">+</button>
+          <button class="canvas-btn" id="btnZoomOut" title="Zoom Out">−</button>
+          <button class="canvas-btn" id="btnResetView" title="Reset View">⟲</button>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend-hud">
+          <div class="legend-item">
+            <div class="legend-marker" style="background: var(--accent-cyan); box-shadow: 0 0 8px var(--accent-cyan);"></div>
+            <span>Start (S)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-marker" style="background: var(--accent-gold); box-shadow: 0 0 8px var(--accent-gold);"></div>
+            <span>Goal (G)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-marker" style="background: var(--accent-rose); box-shadow: 0 0 8px var(--accent-rose);"></div>
+            <span>Hazard (Bad State)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-marker" style="background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green);"></div>
+            <span>Safe Path</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Panel: Analytics & LPA* Diagnostics -->
+    <aside class="glass-card">
+      <div class="panel-header">
+        <span class="panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+          Planning Diagnostics
+        </span>
+      </div>
+
+      <div class="panel-content">
+        <!-- Path Sequence -->
+        <div class="path-display">
+          <span class="metric-title">Optimal State Trajectory</span>
+          <div class="path-pills-row" id="pathSequence">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="metric-grid">
+          <div class="metric-card cyan">
+            <span class="metric-title">Total Base Cost</span>
+            <span class="metric-value" id="valCost">0.00</span>
+          </div>
+          <div class="metric-card success">
+            <span class="metric-title">Min Safety Clearance</span>
+            <span class="metric-value" id="valSafety">0.00</span>
+          </div>
+          <div class="metric-card warning">
+            <span class="metric-title">Transition Reliability</span>
+            <span class="metric-value" id="valReliability">100%</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-title">Combined Score</span>
+            <span class="metric-value" id="valScore">0.00</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-title">Explored States</span>
+            <span class="metric-value" id="valExplored">0</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-title">Planning Time</span>
+            <span class="metric-value" id="valTime">0.0 μs</span>
+          </div>
+        </div>
+
+        <!-- Memory Footprint -->
+        <div class="control-group">
+          <div class="control-label">
+            <span>Planner Memory Footprint</span>
+            <span class="control-val" id="valMemory">0.0 KB</span>
+          </div>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">
+            Includes state hash tables, transition graph, LPA* priority queue & search structures.
+          </div>
+        </div>
+
+        <!-- LPA* Search Table -->
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <span class="metric-title">LPA* Node States (g vs rhs)</span>
+          <div class="lpa-table-wrapper">
+            <table class="lpa-table">
+              <thead>
+                <tr>
+                  <th>Node</th>
+                  <th>Coord</th>
+                  <th>g(s)</th>
+                  <th>rhs(s)</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="lpaTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <script src="planner.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
