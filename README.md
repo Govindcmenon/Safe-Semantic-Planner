@@ -1,4 +1,3 @@
-# Safe-Semantic-Planner
 # Safe Semantic Planner — PCCST503 Assignment 1
 
 A C++17 implementation of a safe path planner over a finite Cartesian state space, built
