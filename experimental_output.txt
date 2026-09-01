@@ -1,0 +1,217 @@
+PCCST503 Assignment 1 - Safe Semantic Planner (LPA*)
+Illustrative test case run - values below are ACTUAL program output
+
+========================================
+TEST CASE 1: BASIC REACHABILITY
+========================================
+Initial State: S
+Goal State: G
+Bad States: None
+
+Result: SUCCESS
+
+State Path:
+S -> A -> B -> G
+
+Transition Path:
+T101 -> T102 -> T103
+
+Total Cost: 3.0000
+Minimum Safety Distance: N/A (no bad states defined)
+Bad States Visited: 0
+Explored States: 4
+Planning Time: 1.91 microseconds
+Planner Memory Footprint: 2.13 KB (2184 bytes)
+Process Peak Working Set (RSS): 3.80 MB (3985408 bytes)
+
+========================================
+TEST CASE 2: BAD STATE AVOIDANCE
+========================================
+Initial State: S
+Goal State: G
+Bad States: X
+
+Result: SUCCESS
+
+State Path:
+S -> C -> D -> G
+
+Transition Path:
+T204 -> T205 -> T206
+
+Total Cost: 3.0000
+Minimum Safety Distance: 1.414214
+Bad States Visited: 0
+Explored States: 5
+Planning Time: 1.99 microseconds
+Planner Memory Footprint: 3.19 KB (3264 bytes)
+Process Peak Working Set (RSS): 3.80 MB (3985408 bytes)
+
+Verification - path contains bad state X: NO (correct)
+
+========================================
+TEST CASE 3: SAFETY MARGIN
+========================================
+Initial State: S
+Goal State: G
+Bad States: Y
+Path 1 (S-A1-A2-G): lower cost (3.0), but passes close to Y (clearance ~0.54, trans safety 0.60)
+Path 2 (S-B1-B2-G): higher cost (9.0), but stays far from Y (clearance 1.50, trans safety 0.95)
+
+Result: SUCCESS
+
+State Path:
+S -> B1 -> B2 -> G
+
+Transition Path:
+T304 -> T305 -> T306
+
+Total Cost: 9.0000
+Minimum Safety Distance: 1.500000
+Bad States Visited: 0
+Explored States: 5
+Planning Time: 1.52 microseconds
+Planner Memory Footprint: 3.45 KB (3528 bytes)
+Process Peak Working Set (RSS): 3.80 MB (3985408 bytes)
+
+Selected: Path 2 (safer path, maximized safety clearance)
+
+Explanation & Optimality Guarantee:
+  1. Safety Objective: The planner integrates both geometric clearance
+     (1/d_safe penalty) and per-transition safety (1 - safety) into the
+     effective edge weight w(e) = cost + kGeom*(1/d_safe) + kTrans*(1-safety).
+  2. Maximizing Safety Distance: Path 1 has a minimum safety clearance of 0.5385,
+     while Path 2 provides a minimum safety clearance of 1.5000 (nearly 3x safer).
+     Path 2 also features higher transition safety (0.95 vs 0.60).
+  3. LPA* Correctness: Because w(e) >= 0 and the heuristic h(s) is scaled
+     by cMin = min(w(e)/d(e)), h(s) remains strictly admissible and consistent.
+     LPA* is guaranteed to find the globally optimal safe path and preserve all
+     incremental replanning guarantees.
+
+Combined Evaluation Score(P) = alpha*G - beta*C + gamma*D + delta*R = 3.2290
+(weights: alpha=10.0000 beta=1.0000 gamma=1.0000 delta=1.0000)
+
+========================================
+TEST CASE 4: DYNAMIC TRANSITION
+========================================
+--- Initial plan ---
+Result: SUCCESS
+
+State Path:
+S -> A -> G
+
+Transition Path:
+T401 -> T402
+
+Total Cost: 2.0000
+Minimum Safety Distance: N/A (no bad states defined)
+Bad States Visited: 0
+Explored States: 3
+Planning Time: 1.04 microseconds
+Planner Memory Footprint: 2.86 KB (2928 bytes)
+Process Peak Working Set (RSS): 3.80 MB (3985408 bytes)
+
+--- Making transition (A,G) [id 402] unavailable, then replanning ---
+Result: SUCCESS
+
+State Path:
+S -> C -> D -> G
+
+Transition Path:
+T403 -> T404 -> T405
+
+Total Cost: 6.0000
+Minimum Safety Distance: N/A (no bad states defined)
+Bad States Visited: 0
+Explored States: 4
+Planning Time: 1.27 microseconds
+Planner Memory Footprint: 2.78 KB (2848 bytes)
+Process Peak Working Set (RSS): 3.80 MB (3985408 bytes)
+
+========================================
+TEST CASE 5: GOAL UPDATE
+========================================
+--- Initial plan toward G_old ---
+Result: SUCCESS
+
+State Path:
+S -> A -> G_old
+
+Transition Path:
+T501 -> T502
+
+Total Cost: 2.0000
+Minimum Safety Distance: N/A (no bad states defined)
+Bad States Visited: 0
+Explored States: 3
+Planning Time: 0.97 microseconds
+Planner Memory Footprint: 2.52 KB (2576 bytes)
+Process Peak Working Set (RSS): 3.80 MB (3985408 bytes)
+
+--- Goal changes to G_new, replanning (warm-started, not from scratch) ---
+Result: SUCCESS
+
+State Path:
+S -> A -> H -> G_new
+
+Transition Path:
+T501 -> T503 -> T504
+
+Total Cost: 3.5000
+Minimum Safety Distance: N/A (no bad states defined)
+Bad States Visited: 0
+Explored States: 2
+Planning Time: 1.09 microseconds
+Planner Memory Footprint: 2.50 KB (2560 bytes)
+Process Peak Working Set (RSS): 3.80 MB (3985408 bytes)
+
+Note: g-values computed during the FIRST plan (e.g. distance from S to A)
+remain valid and are reused; only priority-queue keys were recalculated and
+the search extended toward the new goal. This is a partial, warm-started
+recomputation, not a full graph reinitialization - see PART 9 discussion.
+
+========================================
+TEST CASE 6: TRANSITION ADDITION
+========================================
+--- Initial plan (no shortcut) ---
+Result: SUCCESS
+
+State Path:
+S -> A -> B -> G
+
+Transition Path:
+T601 -> T602 -> T603
+
+Total Cost: 3.0000
+Minimum Safety Distance: N/A (no bad states defined)
+Bad States Visited: 0
+Explored States: 4
+Planning Time: 0.55 microseconds
+Planner Memory Footprint: 2.13 KB (2184 bytes)
+Process Peak Working Set (RSS): 3.80 MB (3985408 bytes)
+
+--- Adding shortcut transition S->G (id 604, cost 1.5), replanning ---
+Result: SUCCESS
+
+State Path:
+S -> G
+
+Transition Path:
+T604
+
+Total Cost: 1.5000
+Minimum Safety Distance: N/A (no bad states defined)
+Bad States Visited: 0
+Explored States: 1
+Planning Time: 0.55 microseconds
+Planner Memory Footprint: 2.20 KB (2248 bytes)
+Process Peak Working Set (RSS): 3.80 MB (3985408 bytes)
+
+========================================
+ADDITIONAL SAFETY EDGE CASES (PART 5)
+========================================
+Case A - Initial state is a bad state -> success = false (correct)
+Case B - Goal state is a bad state -> success = false (correct)
+Case C - Only route passes through a bad state -> success = false (correct)
+Case D - No bad states defined -> success = true (correct), safetyScore is +infinity (correct, documented)
+
